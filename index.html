@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher CRM</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f7f6f3;--bg3:#eeece7;
+  --tx:#1a1a18;--tx2:#6b6a66;--br:#e5e3dc;--br2:#cccac3;
+  --shadow:0 1px 3px rgba(0,0,0,.08);--rad:8px;--radl:12px;
+  --accent:#2563EB;--accent-bg:#DBEAFE;--accent-tx:#1E40AF;
+  --danger-bg:#FEE2E2;--danger-tx:#991B1B;--danger-br:#FCA5A5;
+  --success-bg:#DCFCE7;--success-tx:#166534;--success-br:#86EFAC;
+  --warn-bg:#FEF9C3;--warn-tx:#854D0E;--warn-br:#FDE047;
+}
+.dark{
+  --bg:#18181b;--bg2:#27272a;--bg3:#09090b;
+  --tx:#fafafa;--tx2:#a1a1aa;--br:#3f3f46;--br2:#52525b;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  --accent:#3B82F6;--accent-bg:#1e3a5f;--accent-tx:#93C5FD;
+  --danger-bg:#450a0a;--danger-tx:#fca5a5;--danger-br:#7f1d1d;
+  --success-bg:#052e16;--success-tx:#86efac;--success-br:#14532d;
+  --warn-bg:#422006;--warn-tx:#fde68a;--warn-br:#78350f;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg3);color:var(--tx);height:100dvh;overflow:hidden}
+.app{display:flex;height:100dvh;position:relative}
+
+/* ── Sidebar ── */
+.sidebar{width:268px;min-width:268px;background:var(--bg);border-right:0.5px solid var(--br);display:flex;flex-direction:column;overflow:hidden}
+@media(max-width:680px){
+  .sidebar{position:fixed;left:-268px;top:0;bottom:0;z-index:200;transition:left .25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
+  .sidebar.open{left:0}
+  .mob-ov{display:block!important}
+  .mob-btn{display:flex!important}
+}
+.mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+.mob-btn{display:none;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;border:0.5px solid var(--br2);background:transparent;color:var(--tx);font-size:17px;cursor:pointer}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:var(--bg);border-bottom:0.5px solid var(--br);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.content{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+
+/* ── Shared ── */
+.sh{padding:10px 12px;border-bottom:0.5px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.sh h2{font-size:13px;font-weight:600;color:var(--tx)}
+button{cursor:pointer;font-family:inherit;transition:opacity .15s}
+.btn{padding:5px 12px;border-radius:var(--rad);border:0.5px solid var(--br2);background:transparent;color:var(--tx);font-size:12px}
+.btn:hover{background:var(--bg2)}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-p:hover{opacity:.85}
+.btn-d{background:var(--danger-bg);color:var(--danger-tx);border-color:var(--danger-br)}
+.btn-icon{width:30px;height:30px;border-radius:50%;border:0.5px solid var(--br2);background:transparent;color:var(--tx);font-size:15px;display:flex;align-items:center;justify-content:center}
+.btn-icon:hover{background:var(--bg2)}
+
+/* ── Student list ── */
+.si{padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--br);display:flex;align-items:center;gap:8px;user-select:none}
+.si:hover,.si.active{background:var(--bg2)}
+.si.dragging{opacity:.4}
+.si.drag-over{border-top:2px solid var(--accent)}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0}
+.sn{font-size:13px;font-weight:500;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ss{font-size:11px;color:var(--tx2)}
+.drag-handle{color:var(--tx2);font-size:13px;cursor:grab;padding:0 2px;flex-shrink:0}
+.drag-handle:active{cursor:grabbing}
+
+/* ── Badges ── */
+.bdg{display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.b-bl{background:var(--accent-bg);color:var(--accent-tx)}
+.b-gr{background:var(--success-bg);color:var(--success-tx)}
+.b-rd{background:var(--danger-bg);color:var(--danger-tx)}
+.b-am{background:var(--warn-bg);color:var(--warn-tx)}
+.b-gy{background:var(--bg2);color:var(--tx2)}
+.b-pu{background:#EDE9FE;color:#5B21B6}
+.b-te{background:#CCFBF1;color:#0F766E}
+.dark .b-pu{background:#2e1065;color:#c4b5fd}
+.dark .b-te{background:#022c22;color:#6ee7b7}
+
+/* ── Tabs ── */
+.tabs{display:flex;padding:0 10px;border-bottom:0.5px solid var(--br);background:var(--bg);overflow-x:auto;gap:2px}
+.tab{padding:9px 11px;font-size:12px;cursor:pointer;color:var(--tx2);border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap;font-weight:500}
+.tab.active{color:var(--tx);border-bottom-color:var(--accent)}
+
+/* ── Metric cards ── */
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:9px}
+.mc{background:var(--bg2);border-radius:var(--rad);padding:10px 12px}
+.ml{font-size:11px;color:var(--tx2);margin-bottom:2px;line-height:1.3}
+.mv{font-size:18px;font-weight:600;color:var(--tx)}
+.ms{font-size:11px;color:var(--tx2);margin-top:1px}
+
+/* ── Calendar ── */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cdn{text-align:center;font-size:10px;color:var(--tx2);padding:2px 0;font-weight:600}
+.cd{min-height:50px;border-radius:6px;border:0.5px solid var(--br);padding:3px;background:var(--bg);cursor:pointer}
+.cd:hover{background:var(--bg2)}.cd.today{border-color:var(--accent);border-width:1.5px}.cd.oth{opacity:.3}
+.cdnum{font-size:11px;color:var(--tx2);font-weight:600}.cd.today .cdnum{color:var(--accent)}
+.ld{border-radius:3px;padding:1px 4px;font-size:9px;font-weight:600;overflow:hidden;white-space:nowrap;margin-top:2px}
+
+/* ── Panels ── */
+.pn{background:var(--bg);border-radius:var(--radl);border:0.5px solid var(--br);padding:14px;box-shadow:var(--shadow)}
+.pt{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.row{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:0.5px solid var(--br);flex-wrap:wrap}
+.row:last-child{border-bottom:none}
+
+/* ── Lesson status buttons ── */
+.sb{padding:3px 8px;border-radius:20px;font-size:10px;cursor:pointer;border:0.5px solid var(--br2);background:transparent;color:var(--tx2);font-family:inherit}
+.sb:hover{background:var(--bg2)}
+.sb.s-done{background:var(--success-bg);color:var(--success-tx);border-color:var(--success-br)}
+.sb.s-miss{background:var(--danger-bg);color:var(--danger-tx);border-color:var(--danger-br)}
+.sb.s-paid{background:var(--success-bg);color:var(--success-tx);border-color:var(--success-br)}
+.sb.s-unpaid{background:var(--warn-bg);color:var(--warn-tx);border-color:var(--warn-br)}
+.ls-sep{width:1px;background:var(--br2);align-self:stretch;margin:0 2px;flex-shrink:0}
+
+/* ── Modal ── */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(3px)}
+.md{background:var(--bg);border-radius:var(--radl);border:0.5px solid var(--br);padding:20px;width:370px;max-width:95%;max-height:90dvh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.md h3{font-size:15px;font-weight:600;color:var(--tx);margin-bottom:14px}
+.fg{margin-bottom:10px}
+.fl{font-size:11px;color:var(--tx2);margin-bottom:3px;display:block;font-weight:500}
+.fi{width:100%;padding:7px 10px;border-radius:var(--rad);border:1px solid var(--br2);background:var(--bg2);color:var(--tx);font-size:13px;font-family:inherit}
+.fi:focus{outline:none;border-color:var(--accent)}
+.fr2{display:flex;gap:8px}
+.fa{display:flex;gap:7px;justify-content:flex-end;margin-top:14px}
+.ta{width:100%;min-height:55px;padding:7px 10px;border-radius:var(--rad);border:1px solid var(--br2);background:var(--bg2);color:var(--tx);font-size:13px;resize:vertical;font-family:inherit}
+.ta:focus{outline:none;border-color:var(--accent)}
+
+/* ── HW ── */
+.hwi{display:flex;align-items:flex-start;gap:7px;padding:6px 0;border-bottom:0.5px solid var(--br)}
+.hwi:last-child{border-bottom:none}
+.hwc{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--br2);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.hwc.done{background:var(--success-bg);border-color:var(--success-br);color:var(--success-tx)}
+
+/* ── Progress bar ── */
+.pb{height:3px;border-radius:2px;background:var(--br);margin-top:4px;overflow:hidden}
+.pf{height:100%;border-radius:2px;background:var(--accent)}
+
+/* ── Search ── */
+.srch{padding:7px 10px;border-radius:var(--rad);border:1px solid var(--br2);background:var(--bg2);color:var(--tx);font-size:12px;margin:8px;width:calc(100% - 16px);font-family:inherit}
+.srch:focus{outline:none;border-color:var(--accent)}
+
+/* ── Save indicator ── */
+.si-ind{font-size:10px;color:var(--tx2);padding:3px 9px;border-radius:20px;background:var(--bg2);white-space:nowrap}
+
+/* ── Color picker ── */
+.color-picker{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+.cp-sw{width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform .1s,border-color .1s;position:relative}
+.cp-sw:hover{transform:scale(1.18)}
+.cp-sw.sel::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+
+/* ── Day buttons (repeat) ── */
+.db-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--br2);background:transparent;color:var(--tx2);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.db-btn.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── Payout rows ── */
+.pay-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:0.5px solid var(--br);flex-wrap:wrap}
+.pay-row:last-child{border-bottom:none}
+
+/* ── Note chip ── */
+.note-chip{font-size:10px;color:var(--tx2);background:var(--bg2);border-radius:4px;padding:2px 6px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0.5px solid var(--br)}
+.note-chip:hover{border-color:var(--accent);color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="app dark" id="app">
+  <div class="mob-ov" id="mobOv" onclick="closeSB()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sh">
+      <h2>Ученики</h2>
+      <div style="display:flex;gap:5px">
+        <button class="btn" style="font-size:11px;padding:4px 8px" onclick="openBackup()">⬇ Бэкап</button>
+        <button class="btn btn-p" onclick="openAddSt()">+ Добавить</button>
+      </div>
+    </div>
+    <input class="srch" placeholder="Поиск..." id="srch" oninput="renderSL()">
+    <div id="SL" style="overflow-y:auto;flex:1"></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:7px">
+        <button class="mob-btn" id="mobBtn" onclick="openSB()">☰</button>
+        <button class="btn" onclick="pm()">&#8592;</button>
+        <span style="font-size:13px;font-weight:600;color:var(--tx);min-width:145px;text-align:center" id="MT"></span>
+        <button class="btn" onclick="nm()">&#8594;</button>
+        <button class="btn" onclick="gt()" style="font-size:11px">Сегодня</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn-icon" onclick="toggleTheme()" id="themeBtn" title="Тема">☀️</button>
+        <span class="si-ind" id="SI">...</span>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab" onclick="sv('ov')" id="v-ov">Обзор</div>
+      <div class="tab" onclick="sv('cal')" id="v-cal">Календарь</div>
+      <div class="tab" onclick="sv('fin')" id="v-fin">Финансы</div>
+      <div class="tab" onclick="sv('st')" id="v-st">Ученик</div>
+    </div>
+    <div class="content" id="MC"></div>
+  </div>
+  <div id="MOD"></div>
+</div>
+
+<script>
+// ── Palette: vivid colors that work in both themes ──
+const PALETTE=[
+  {bg:'#3B82F6',lbl:'Синий'},
+  {bg:'#10B981',lbl:'Зелёный'},
+  {bg:'#F59E0B',lbl:'Янтарный'},
+  {bg:'#8B5CF6',lbl:'Фиолетовый'},
+  {bg:'#EF4444',lbl:'Красный'},
+  {bg:'#EC4899',lbl:'Розовый'},
+  {bg:'#14B8A6',lbl:'Бирюзовый'},
+  {bg:'#6B7280',lbl:'Серый'},
+  {bg:'#F97316',lbl:'Оранжевый'},
+  {bg:'#A855F7',lbl:'Сирень'},
+];
+function palBg(s){return PALETTE[s.color%PALETTE.length].bg}
+function palTx(){return '#ffffff'}
+
+const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MS=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MS2=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const DN=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const LV=['A1','A2','B1','B2','C1','C2'];
+
+const DS=[
+  {id:1,name:'Анна Петрова',level:'B2',phone:'',tg:'@anna_p',focus:'Разговорный',payType:'month',rate:1500,color:0,type:'student',
+   lessons:[
+    {id:1,date:'2026-05-02',done:true,paid:true,note:'Past Perfect'},
+    {id:2,date:'2026-05-06',done:true,paid:true,note:''},
+    {id:3,date:'2026-05-09',done:false,paid:false,note:''},
+    {id:4,date:'2026-05-13',done:false,paid:false,note:''},
+    {id:5,date:'2026-05-16',done:false,paid:false,note:''},
+    {id:6,date:'2026-05-20',done:false,paid:false,note:''},
+    {id:7,date:'2026-05-23',done:false,paid:false,note:''},
+    {id:8,date:'2026-05-27',done:false,paid:false,note:''},
+   ],hw:[{t:'Unit 5 упр. 1-5',d:false},{t:'Эссе 200 слов',d:true}],notes:'Хорошая грамматика, нужен speaking',monthPayments:{}},
+  {id:2,name:'Дмитрий Кузнецов',level:'A2',phone:'',tg:'',focus:'Грамматика',payType:'lesson',rate:1200,color:1,type:'student',
+   lessons:[
+    {id:1,date:'2026-05-04',done:true,paid:true,note:''},
+    {id:2,date:'2026-05-11',done:false,paid:false,note:'Болел',missed:true},
+    {id:3,date:'2026-05-18',done:false,paid:false,note:''},
+    {id:4,date:'2026-05-25',done:false,paid:false,note:''},
+   ],hw:[{t:'Артикли — тест стр.34',d:false}],notes:'',monthPayments:{}},
+  {id:3,name:'Мария Сидорова',level:'C1',phone:'',tg:'@maria_s',focus:'IELTS',payType:'lesson',rate:2000,color:3,type:'student',
+   lessons:[
+    {id:1,date:'2026-05-01',done:true,paid:true,note:''},
+    {id:2,date:'2026-05-05',done:true,paid:true,note:''},
+    {id:3,date:'2026-05-08',done:true,paid:true,note:''},
+    {id:4,date:'2026-05-12',done:false,paid:false,note:''},
+    {id:5,date:'2026-05-15',done:false,paid:false,note:''},
+    {id:6,date:'2026-05-19',done:false,paid:false,note:''},
+   ],hw:[{t:'Writing Task 2',d:false},{t:'Listening mock',d:false}],notes:'Цель IELTS 7.5',monthPayments:{}},
+  {id:4,name:'SkyEng',level:'',phone:'',tg:'',focus:'',payType:'company',rate:0,color:6,type:'company',
+   lessons:[],hw:[],notes:'Выплаты раз в 2 недели.',monthPayments:{},
+   payouts:[
+    {id:1,date:'2026-04-15',amount:18500,note:'Выплата 1–15 апр',received:true},
+    {id:2,date:'2026-04-30',amount:21000,note:'Выплата 16–30 апр',received:true},
+    {id:3,date:'2026-05-15',amount:19800,note:'Выплата 1–15 мая',received:false},
+   ]},
+];
+
+let S={date:new Date(),selId:null,view:'ov',students:[],dark:true};
+let saveT=null,selDays=new Set(),_pc=0;
+let dragSrc=null;
+
+// ── Persistence ──
+function load(){
+  try{
+    const raw=localStorage.getItem('tcrm_v5');
+    if(raw){const d=JSON.parse(raw);S.students=d.students||[];S.dark=d.dark!==undefined?d.dark:true;}
+    else{S.students=JSON.parse(JSON.stringify(DS));S.dark=true;}
+    // migration: ensure monthPayments exists
+    S.students.forEach(s=>{if(!s.monthPayments)s.monthPayments={};if(!s.payouts&&s.type==='company')s.payouts=[];});
+  }catch(e){S.students=JSON.parse(JSON.stringify(DS));S.dark=true;}
+  applyTheme();setInd('Готово ✓');renderAll();
+}
+function save(){
+  clearTimeout(saveT);setInd('Сохранение...');
+  saveT=setTimeout(()=>{
+    try{localStorage.setItem('tcrm_v5',JSON.stringify({students:S.students,dark:S.dark}));setInd('Сохранено ✓');}
+    catch(e){setInd('Не сохранено');}
+  },600);
+}
+function applyTheme(){
+  document.getElementById('app').classList.toggle('dark',S.dark);
+  document.getElementById('themeBtn').textContent=S.dark?'☀️':'🌙';
+}
+function toggleTheme(){S.dark=!S.dark;applyTheme();save();}
+function setInd(t){const e=document.getElementById('SI');if(e)e.textContent=t;}
+function gi(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')+'₽'}
+function mkKey(y,m){return y+'-'+m}
+function glm(s,y,m){return(s.lessons||[]).filter(l=>{const d=new Date(l.date);return d.getFullYear()===y&&d.getMonth()===m})}
+
+// ── Finance calculations (FIX: correct logic) ──
+// Expected = ALL planned lessons × rate (not just done)
+// Received = paid lessons (done OR prepaid) + received company payouts
+// Debt    = lessons where done=true OR missed=true AND paid=false (for lesson-type)
+//           OR monthPayments not set (for month-type)
+
+function gexp(s,y,m){
+  if(s.type==='company'){
+    // ALL payouts for this month (received or not)
+    return(s.payouts||[]).filter(p=>{const d=new Date(p.date);return d.getFullYear()===y&&d.getMonth()===m}).reduce((a,p)=>a+p.amount,0);
+  }
+  if(s.payType==='month'){
+    const ls=glm(s,y,m).filter(l=>!l.missed);
+    return ls.length*s.rate;
+  }
+  // lesson: ALL non-missed lessons × rate
+  const ls=glm(s,y,m).filter(l=>!l.missed);
+  return ls.length*s.rate;
+}
+
+function gearn(s,y,m){
+  if(s.type==='company'){
+    // Only RECEIVED payouts
+    return(s.payouts||[]).filter(p=>{const d=new Date(p.date);return d.getFullYear()===y&&d.getMonth()===m&&p.received}).reduce((a,p)=>a+p.amount,0);
+  }
+  if(s.payType==='month'){
+    const key=mkKey(y,m);
+    return(s.monthPayments||{})[key]?gexp(s,y,m):0;
+  }
+  // lesson: paid = true means money received, regardless of done status
+  return glm(s,y,m).filter(l=>!l.missed&&l.paid).length*s.rate;
+}
+
+function gdebt(s,y,m){
+  if(s.type==='company')return 0;
+  if(s.payType==='month'){const e=gexp(s,y,m),ea=gearn(s,y,m);return e>0?e-ea:0;}
+  // lesson: done (or missed+paid situation) and NOT paid
+  return glm(s,y,m).filter(l=>!l.missed&&l.done&&!l.paid).length*s.rate;
+}
+
+function texp(y,m){return S.students.reduce((a,s)=>a+gexp(s,y,m),0)}
+function tearn(y,m){return S.students.reduce((a,s)=>a+gearn(s,y,m),0)}
+function tdebt(y,m){return S.students.reduce((a,s)=>a+gdebt(s,y,m),0)}
+
+function tyear(){
+  // Year forecast = sum of expected for all months of current year
+  let t=0;const y=S.date.getFullYear();
+  for(let m=0;m<12;m++)t+=texp(y,m);
+  return t;
+}
+
+// ── Sidebar ──
+function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('mobOv').style.display='block'}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mobOv').style.display='none'}
+
+function renderSL(){
+  const q=(document.getElementById('srch')||{value:''}).value.toLowerCase();
+  const y=S.date.getFullYear(),m=S.date.getMonth();
+  const filtered=S.students.filter(s=>s.name.toLowerCase().includes(q));
+  const html=filtered.map((s,idx)=>{
+    const bg=palBg(s),debt=gdebt(s,y,m);
+    const sub=s.type==='company'?`Платформа · ${fmt(gexp(s,y,m))}`:`${s.level||''} · ${glm(s,y,m).filter(l=>!l.missed).length} ур.${debt>0?` · <span style="color:var(--danger-tx)">долг</span>`:''}`;
+    return `<div class="si${S.selId===s.id?' active':''}" id="si-${s.id}"
+      draggable="true"
+      ondragstart="dragStart(event,${s.id})"
+      ondragover="dragOver(event,${s.id})"
+      ondrop="dragDrop(event,${s.id})"
+      ondragend="dragEnd()"
+      onclick="sel(${s.id})">
+      <span class="drag-handle" title="Перетащить">⠿</span>
+      <div class="av" style="width:30px;height:30px;font-size:10px;background:${bg};color:#fff">${gi(s.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="sn">${s.name}${s.type==='company'?' <span class="bdg b-te" style="font-size:9px">платформа</span>':''}</div>
+        <div class="ss">${sub}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const el=document.getElementById('SL');
+  if(el)el.innerHTML=html||'<div style="padding:12px;font-size:12px;color:var(--tx2)">Нет учеников</div>';
+}
+
+// ── Drag & drop reorder ──
+function dragStart(e,id){dragSrc=id;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function dragOver(e,id){e.preventDefault();if(dragSrc!==id){document.querySelectorAll('.si').forEach(el=>el.classList.remove('drag-over'));document.getElementById('si-'+id)?.classList.add('drag-over');}}
+function dragDrop(e,id){
+  e.preventDefault();
+  if(dragSrc===id)return;
+  const from=S.students.findIndex(s=>s.id===dragSrc),to=S.students.findIndex(s=>s.id===id);
+  if(from<0||to<0)return;
+  const [item]=S.students.splice(from,1);S.students.splice(to,0,item);
+  save();renderAll();
+}
+function dragEnd(){dragSrc=null;document.querySelectorAll('.si').forEach(el=>el.classList.remove('dragging','drag-over'));}
+
+// FIX #3: switching tabs doesn't reset selected student
+function sel(id){S.selId=id;S.view='st';closeSB();renderAll()}
+function sv(v){
+  S.view=v;
+  // Do NOT reset S.selId — keep student selected across tabs
+  renderAll();
+}
+function pm(){S.date=new Date(S.date.getFullYear(),S.date.getMonth()-1,1);renderAll()}
+function nm(){S.date=new Date(S.date.getFullYear(),S.date.getMonth()+1,1);renderAll()}
+function gt(){S.date=new Date();renderAll()}
+
+function renderAll(){
+  document.getElementById('MT').textContent=MN[S.date.getMonth()]+' '+S.date.getFullYear();
+  renderSL();
+  ['ov','cal','fin','st'].forEach(v=>{const e=document.getElementById('v-'+v);if(e)e.className='tab'+(S.view===v?' active':'');});
+  const mc=document.getElementById('MC');if(!mc)return;
+  if(S.view==='ov')mc.innerHTML=rOv();
+  else if(S.view==='cal')mc.innerHTML=rCal();
+  else if(S.view==='fin')mc.innerHTML=rFin();
+  else if(S.view==='st')mc.innerHTML=rSt();
+}
+
+// ── OVERVIEW ──
+function rOv(){
+  const y=S.date.getFullYear(),m=S.date.getMonth();
+  const exp=texp(y,m),earn=tearn(y,m),debt=tdebt(y,m);
+  const allL=S.students.filter(s=>s.type==='student').flatMap(s=>glm(s,y,m).filter(l=>!l.missed)).length;
+  const up=S.students.filter(s=>s.type==='student').flatMap(s=>(s.lessons||[]).filter(l=>{const d=new Date(l.date);return d>=new Date()&&!l.done&&!l.missed}).map(l=>({...l,s}))).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,6);
+  return `<div class="mg">
+    <div class="mc"><div class="ml">Ожидаемый доход: ${MS[m]}</div><div class="mv">${fmt(exp)}</div></div>
+    <div class="mc"><div class="ml">Получено</div><div class="mv">${fmt(earn)}</div></div>
+    <div class="mc"><div class="ml">Долги</div><div class="mv" style="color:${debt>0?'var(--danger-tx)':'var(--tx)'}">${fmt(debt)}</div></div>
+    <div class="mc"><div class="ml">Уроков в месяце</div><div class="mv">${allL}</div></div>
+  </div>
+  <div class="pn"><div class="pt">Ученики — ${MN[m]}</div>
+    ${S.students.map(s=>{
+      const bg=palBg(s),e=gexp(s,y,m),ea=gearn(s,y,m),d=gdebt(s,y,m),pct=e>0?Math.round(ea/e*100):0,cnt=glm(s,y,m).filter(l=>!l.missed).length;
+      return `<div class="row" onclick="sel(${s.id})" style="cursor:pointer">
+        <div class="av" style="width:26px;height:26px;font-size:9px;background:${bg};color:#fff">${gi(s.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;color:var(--tx)">${s.name}</div>
+          <div style="font-size:11px;color:var(--tx2)">${s.type==='company'?'Платформа':`${cnt} ур · ${s.payType==='month'?'помесячно':'поурочно'}`}</div>
+          <div class="pb"><div class="pf" style="width:${pct}%"></div></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:12px;font-weight:500;color:var(--tx)">${fmt(e)}</div>
+          ${d>0?`<div style="font-size:10px;color:var(--danger-tx)">долг ${fmt(d)}</div>`:`<div style="font-size:10px;color:var(--success-tx)">OK</div>`}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="pn"><div class="pt">Ближайшие уроки</div>
+    ${up.length===0?`<div style="font-size:12px;color:var(--tx2)">Нет запланированных уроков</div>`:
+    up.map(l=>{const bg=palBg(l.s),d=new Date(l.date),isT=d.toDateString()===new Date().toDateString();
+      return `<div class="row"><div class="av" style="width:22px;height:22px;font-size:9px;background:${bg};color:#fff">${gi(l.s.name)}</div>
+        <div style="flex:1;font-size:12px;color:var(--tx)">${l.s.name}</div>
+        <span class="bdg ${isT?'b-am':'b-gy'}">${isT?'Сегодня':d.getDate()+' '+MS2[d.getMonth()]}</span>
+        ${l.paid&&!l.done?'<span class="bdg b-gr" style="font-size:10px">Предоплата</span>':''}
+      </div>`;}).join('')}
+  </div>`;
+}
+
+// ── CALENDAR ──
+function rCal(){
+  const y=S.date.getFullYear(),m=S.date.getMonth();
+  const first=new Date(y,m,1);let sdow=first.getDay()-1;if(sdow<0)sdow=6;
+  const dim=new Date(y,m+1,0).getDate(),dipm=new Date(y,m,0).getDate(),tod=new Date();
+  const allL=S.students.filter(s=>s.type==='student').flatMap(s=>glm(s,y,m).map(l=>({...l,s})));
+  const bd={};allL.forEach(l=>{const d=new Date(l.date).getDate();if(!bd[d])bd[d]=[];bd[d].push(l)});
+  S.students.filter(s=>s.type==='company').forEach(s=>{
+    (s.payouts||[]).filter(p=>{const d=new Date(p.date);return d.getFullYear()===y&&d.getMonth()===m}).forEach(p=>{
+      const d=new Date(p.date).getDate();if(!bd[d])bd[d]=[];bd[d].push({...p,s,isPayout:true});
+    });
+  });
+  let cells=[];
+  for(let i=0;i<sdow;i++)cells.push({day:dipm-sdow+1+i,cur:false});
+  for(let i=1;i<=dim;i++)cells.push({day:i,cur:true});
+  while(cells.length%7!==0)cells.push({day:cells.length-sdow-dim+1,cur:false});
+  return `<div class="pn"><div class="cal">
+    ${DN.map(d=>`<div class="cdn">${d}</div>`).join('')}
+    ${cells.map(c=>{
+      const isT=c.cur&&c.day===tod.getDate()&&y===tod.getFullYear()&&m===tod.getMonth();
+      const ls=c.cur?(bd[c.day]||[]):[];
+      return `<div class="cd${isT?' today':''}${!c.cur?' oth':''}" onclick="${c.cur?`cdc(${c.day})`:''}">
+        <div class="cdnum">${c.day}</div>
+        ${ls.slice(0,2).map(l=>{const bg=palBg(l.s);
+          if(l.isPayout)return `<div class="ld" style="background:${bg};color:#fff;opacity:${l.received?1:.5}">💰${gi(l.s.name)}</div>`;
+          return `<div class="ld" style="background:${bg};color:#fff;opacity:${l.missed?.4:1};text-decoration:${l.missed?'line-through':'none'}">${gi(l.s.name)}</div>`;
+        }).join('')}
+        ${ls.length>2?`<div style="font-size:8px;color:var(--tx2)">+${ls.length-2}</div>`:''}
+      </div>`;
+    }).join('')}
+  </div></div>
+  <div class="pn"><div class="pt">Уроки — ${MN[m]}</div>
+    ${S.students.filter(s=>s.type==='student').flatMap(s=>glm(s,y,m).map(l=>({...l,s}))).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(l=>{
+      const bg=palBg(l.s),d=new Date(l.date);
+      return `<div class="row">
+        <div class="av" style="width:22px;height:22px;font-size:9px;background:${bg};color:#fff">${gi(l.s.name)}</div>
+        <div style="font-size:11px;color:var(--tx2);min-width:48px">${d.getDate()} ${MS2[d.getMonth()]}</div>
+        <div style="flex:1;font-size:12px;color:var(--tx)">${l.s.name}</div>
+        ${lBtns(l.s.id,l.id,l,l.s.payType)}
+      </div>`;
+    }).join('')||`<div style="font-size:12px;color:var(--tx2)">Нет уроков в этом месяце</div>`}
+  </div>`;
+}
+
+function lBtns(sid,lid,l,payType){
+  const missed=l.missed||false,done=l.done||false;
+  return `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">
+    <div style="display:flex;gap:2px">
+      <button class="sb${done&&!missed?' s-done':''}" onclick="setDone(${sid},${lid})">${done&&!missed?'✓ Провёл':'Провёл'}</button>
+      <button class="sb${missed?' s-miss':''}" onclick="setMissed(${sid},${lid})">${missed?'✗ Не состоялся':'Не состоялся'}</button>
+    </div>
+    <div class="ls-sep"></div>
+    <button class="sb${l.paid?' s-paid':done||missed?' s-unpaid':''}" onclick="togPaid(${sid},${lid})">${l.paid?'✓ Оплачен':'Не оплачен'}</button>
+  </div>`;
+}
+
+// ── FINANCE ──
+function rFin(){
+  const y=S.date.getFullYear(),m=S.date.getMonth();
+  const mons=[];for(let i=5;i>=0;i--){let mm=m-i,yy=y;while(mm<0){mm+=12;yy--}mons.push({l:MS2[mm]+' '+yy,e:texp(yy,mm),ea:tearn(yy,mm)});}
+  const mx=Math.max(...mons.map(x=>x.e),1);
+  const compSt=S.students.filter(s=>s.type==='company');
+  return `<div class="mg">
+    <div class="mc"><div class="ml">Ожидаемый доход: ${MS[m]}</div><div class="mv">${fmt(texp(y,m))}</div></div>
+    <div class="mc"><div class="ml">Получено</div><div class="mv">${fmt(tearn(y,m))}</div></div>
+    <div class="mc"><div class="ml">Долги</div><div class="mv" style="color:${tdebt(y,m)>0?'var(--danger-tx)':'var(--tx)'}">${fmt(tdebt(y,m))}</div></div>
+    <div class="mc"><div class="ml">Прогноз за год</div><div class="mv">${fmt(tyear())}</div></div>
+  </div>
+  <div class="pn"><div class="pt">Последние 6 месяцев</div>
+    <div style="display:flex;align-items:flex-end;gap:5px;height:90px;margin-bottom:7px">
+      ${mons.map(mo=>{const h=Math.round(mo.e/mx*100)||2,he=Math.round(mo.ea/mx*100);
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:100%;position:relative;height:${h}px;background:var(--accent-bg);border-radius:3px 3px 0 0">
+            <div style="position:absolute;bottom:0;width:100%;height:${he}px;background:var(--accent);border-radius:3px 3px 0 0"></div>
+          </div>
+          <div style="font-size:9px;color:var(--tx2)">${mo.l}</div>
+        </div>`;}).join('')}
+    </div>
+    <div style="display:flex;gap:12px;font-size:10px;color:var(--tx2)">
+      <span><span style="display:inline-block;width:9px;height:9px;background:var(--accent-bg);border-radius:2px;margin-right:3px"></span>Ожидаемый</span>
+      <span><span style="display:inline-block;width:9px;height:9px;background:var(--accent);border-radius:2px;margin-right:3px"></span>Получено</span>
+    </div>
+  </div>
+  <div class="pn"><div class="pt">По ученикам — ${MN[m]}</div>
+    ${S.students.map(s=>{const bg=palBg(s),e=gexp(s,y,m),d=gdebt(s,y,m);
+      return `<div class="row">
+        <div class="av" style="width:22px;height:22px;font-size:9px;background:${bg};color:#fff">${gi(s.name)}</div>
+        <div style="flex:1;font-size:12px;color:var(--tx)">${s.name} <span class="bdg ${s.type==='company'?'b-te':s.payType==='month'?'b-bl':'b-gy'}" style="margin-left:4px">${s.type==='company'?'платформа':s.payType==='month'?'/мес':'/ур'}</span></div>
+        <div style="text-align:right"><div style="font-size:12px;font-weight:500;color:var(--tx)">${fmt(e)}</div>${d>0?`<div style="font-size:10px;color:var(--danger-tx)">долг ${fmt(d)}</div>`:''}</div>
+      </div>`;}).join('')}
+  </div>
+  ${compSt.map(s=>{const bg=palBg(s);
+    const recent=(s.payouts||[]).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+    return `<div class="pn"><div class="pt">${s.name} — выплаты
+      <button class="btn btn-p" style="font-size:11px" onclick="oAddPayout(${s.id})">+ Выплата</button>
+    </div>
+    ${recent.map(p=>{const d=new Date(p.date);return `<div class="pay-row">
+      <span style="font-size:11px;color:var(--tx2);min-width:75px">${d.getDate()} ${MS2[d.getMonth()]} ${d.getFullYear()}</span>
+      <span style="flex:1;font-size:12px;color:var(--tx)">${p.note||'Выплата'}</span>
+      <span style="font-size:12px;font-weight:600;color:${p.received?'var(--success-tx)':'var(--tx2)'};">${fmt(p.amount)}</span>
+      <button class="sb${p.received?' s-paid':' s-unpaid'}" onclick="togPayoutReceived(${s.id},${p.id})">${p.received?'✓ Получено':'Ожидается'}</button>
+      <button class="sb" onclick="delPayout(${s.id},${p.id})" style="color:var(--danger-tx)">✕</button>
+    </div>`;}).join('')||`<div style="font-size:12px;color:var(--tx2)">Нет выплат</div>`}
+    </div>`;}).join('')}
+  <div class="pn"><div class="pt">Долги учеников</div>
+    ${S.students.filter(s=>gdebt(s,y,m)>0).map(s=>{const bg=palBg(s);return `<div class="row">
+      <div class="av" style="width:22px;height:22px;font-size:9px;background:${bg};color:#fff">${gi(s.name)}</div>
+      <div style="flex:1;font-size:12px;color:var(--tx)">${s.name}</div>
+      <span class="bdg b-rd">${fmt(gdebt(s,y,m))}</span>
+      <button class="btn" style="font-size:10px" onclick="mapd(${s.id},${y},${m})">Закрыть долг</button>
+    </div>`;}).join('')||`<div style="font-size:12px;color:var(--tx2)">Долгов нет 🎉</div>`}
+  </div>`;
+}
+
+// ── STUDENT DETAIL ──
+function rSt(){
+  const s=S.students.find(x=>x.id===S.selId);
+  if(!s)return `<div style="padding:20px;font-size:13px;color:var(--tx2)">Выберите ученика слева</div>`;
+  if(s.type==='company')return rCompany(s);
+  const bg=palBg(s),y=S.date.getFullYear(),m=S.date.getMonth();
+  const ls=glm(s,y,m),done=ls.filter(l=>l.done&&!l.missed).length,upcoming=ls.filter(l=>!l.done&&!l.missed).length;
+  const exp=gexp(s,y,m),debt=gdebt(s,y,m),total=s.lessons.filter(l=>l.done).length;
+  const key=mkKey(y,m),monthPaid=(s.monthPayments||{})[key];
+  return `<div class="pn" style="display:flex;align-items:flex-start;gap:12px">
+    <div class="av" style="width:48px;height:48px;font-size:16px;background:${bg};color:#fff;flex-shrink:0">${gi(s.name)}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:15px;font-weight:600;color:var(--tx);margin-bottom:5px">${s.name}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px">
+        <span class="bdg b-bl">${s.level}</span>
+        <span class="bdg b-gy">${s.focus}</span>
+        <span class="bdg b-pu">Всего: ${total} ур.</span>
+      </div>
+      <div style="font-size:11px;color:var(--tx2)">${s.phone||''} ${s.tg?'· '+s.tg:''}</div>
+    </div>
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <button class="btn" onclick="oEs(${s.id})">Редакт.</button>
+      <button class="btn btn-d" onclick="confDel(${s.id})">Удалить</button>
+    </div>
+  </div>
+  <div class="mg">
+    <div class="mc"><div class="ml">Проведено</div><div class="mv">${done}</div><div class="ms">в ${MS2[m]}</div></div>
+    <div class="mc"><div class="ml">Предстоит</div><div class="mv">${upcoming}</div></div>
+    <div class="mc"><div class="ml">Ожидаемый доход: ${MS2[m]}</div><div class="mv">${fmt(exp)}</div></div>
+    <div class="mc"><div class="ml">Долг</div><div class="mv" style="color:${debt>0?'var(--danger-tx)':'var(--tx)'}">${fmt(debt)}</div></div>
+  </div>
+  ${s.payType==='month'?`<div class="pn"><div class="pt">Оплата за ${MN[m]}
+    <button class="sb${monthPaid?' s-paid':' s-unpaid'}" style="font-size:12px;padding:4px 12px" onclick="togMP(${s.id},${y},${m})">${monthPaid?'✓ Оплачено за месяц':'Не оплачено за месяц'}</button>
+  </div>
+  <div style="font-size:12px;color:var(--tx2)">
+    ${fmt(s.rate)} × ${ls.filter(l=>!l.missed).length} уроков = <strong style="color:var(--tx)">${fmt(exp)}</strong>
+  </div></div>`:''}
+  <div class="pn"><div class="pt">Уроки — ${MN[m]}
+    <div style="display:flex;gap:5px">
+      <button class="btn" style="font-size:11px" onclick="oRep(${s.id})">Повторяющийся</button>
+      <button class="btn btn-p" style="font-size:11px" onclick="oAl(${s.id})">+ Урок</button>
+    </div>
+  </div>
+    ${ls.length===0?`<div style="font-size:12px;color:var(--tx2)">Нет уроков в этом месяце</div>`:
+    ls.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(l=>{const d=new Date(l.date);
+      return `<div class="row">
+        <div style="font-size:11px;color:var(--tx2);min-width:46px">${d.getDate()} ${MS2[d.getMonth()]}</div>
+        <div style="flex:1">${lBtns(s.id,l.id,l,s.payType)}</div>
+        <button class="note-chip" onclick="editNote(${s.id},${l.id})" title="${l.note||'Добавить заметку'}">${l.note||'+ заметка'}</button>
+        <button class="sb" onclick="dl(${s.id},${l.id})" style="color:var(--danger-tx)">✕</button>
+      </div>`;}).join('')}
+  </div>
+  <div class="pn"><div class="pt">Домашние задания
+    <button class="btn btn-p" style="font-size:11px" onclick="oAh(${s.id})">+ Задание</button>
+  </div>
+    ${s.hw.length===0?`<div style="font-size:12px;color:var(--tx2)">Нет заданий</div>`:
+    s.hw.map((h,i)=>`<div class="hwi">
+      <div class="hwc${h.d?' done':''}" onclick="th(${s.id},${i})">${h.d?'✓':''}</div>
+      <span style="flex:1;font-size:12px;color:var(--tx);${h.d?'text-decoration:line-through;opacity:.5':''}">${h.t}</span>
+      <button class="sb" onclick="dh(${s.id},${i})" style="color:var(--danger-tx)">✕</button>
+    </div>`).join('')}
+  </div>
+  <div class="pn"><div class="pt">Заметки о прогрессе</div>
+    <textarea class="ta" id="na_${s.id}" onblur="sn(${s.id},this.value)">${s.notes||''}</textarea>
+  </div>`;
+}
+
+function rCompany(s){
+  const bg=palBg(s),y=S.date.getFullYear(),m=S.date.getMonth();
+  const mop=(s.payouts||[]).filter(p=>{const d=new Date(p.date);return d.getFullYear()===y&&d.getMonth()===m});
+  const totM=mop.filter(p=>p.received).reduce((a,p)=>a+p.amount,0);
+  const totAll=(s.payouts||[]).filter(p=>p.received).reduce((a,p)=>a+p.amount,0);
+  const day=new Date().getDate(),nextP=day<=15?`15 ${MS2[m]}`:`1 ${MS2[(m+1)%12]}`;
+  return `<div class="pn" style="display:flex;align-items:flex-start;gap:12px">
+    <div class="av" style="width:48px;height:48px;font-size:16px;background:${bg};color:#fff;flex-shrink:0">${gi(s.name)}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:15px;font-weight:600;color:var(--tx);margin-bottom:5px">${s.name}</div>
+      <span class="bdg b-te">Платформа / Компания</span>
+      <div style="font-size:11px;color:var(--tx2);margin-top:6px">${s.notes||''}</div>
+    </div>
+    <div style="display:flex;gap:5px">
+      <button class="btn" onclick="oEs(${s.id})">Редакт.</button>
+      <button class="btn btn-d" onclick="confDel(${s.id})">Удалить</button>
+    </div>
+  </div>
+  <div class="mg">
+    <div class="mc"><div class="ml">Получено: ${MS2[m]}</div><div class="mv">${fmt(totM)}</div></div>
+    <div class="mc"><div class="ml">Ожидается: ${MS2[m]}</div><div class="mv">${fmt(mop.filter(p=>!p.received).reduce((a,p)=>a+p.amount,0))}</div></div>
+    <div class="mc"><div class="ml">Следующая ~</div><div class="mv" style="font-size:14px">${nextP}</div></div>
+    <div class="mc"><div class="ml">Всего получено</div><div class="mv">${fmt(totAll)}</div></div>
+  </div>
+  <div class="pn"><div class="pt">Выплаты — ${MN[m]}
+    <button class="btn btn-p" style="font-size:11px" onclick="oAddPayout(${s.id})">+ Внести выплату</button>
+  </div>
+    ${mop.length===0?`<div style="font-size:12px;color:var(--tx2)">Нет выплат в этом месяце</div>`:
+    mop.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(p=>{const d=new Date(p.date);return `<div class="pay-row">
+      <span style="font-size:11px;color:var(--tx2);min-width:55px">${d.getDate()} ${MS2[d.getMonth()]}</span>
+      <span style="flex:1;font-size:12px;color:var(--tx)">${p.note||'Выплата'}</span>
+      <span style="font-size:12px;font-weight:600;color:${p.received?'var(--success-tx)':'var(--tx2)'};">${fmt(p.amount)}</span>
+      <button class="sb${p.received?' s-paid':' s-unpaid'}" onclick="togPayoutReceived(${s.id},${p.id})">${p.received?'✓ Получено':'Ожидается'}</button>
+      <button class="sb" onclick="delPayout(${s.id},${p.id})" style="color:var(--danger-tx)">✕</button>
+    </div>`;}).join('')}
+  </div>
+  <div class="pn"><div class="pt">История всех выплат</div>
+    ${(s.payouts||[]).slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(p=>{const d=new Date(p.date);return `<div class="pay-row">
+      <span style="font-size:11px;color:var(--tx2);min-width:80px">${d.getDate()} ${MS2[d.getMonth()]} ${d.getFullYear()}</span>
+      <span style="flex:1;font-size:12px;color:var(--tx)">${p.note||'Выплата'}</span>
+      <span class="bdg ${p.received?'b-gr':'b-am'}">${p.received?'Получено':'Ожидается'}</span>
+      <span style="font-size:12px;font-weight:600;color:${p.received?'var(--success-tx)':'var(--tx2)'};">${fmt(p.amount)}</span>
+    </div>`;}).join('')||`<div style="font-size:12px;color:var(--tx2)">Нет выплат</div>`}
+  </div>`;
+}
+
+// ── ACTIONS ──
+function setDone(sid,lid){const s=S.students.find(x=>x.id===sid),l=s.lessons.find(x=>x.id===lid);l.done=true;l.missed=false;save();renderAll()}
+function setMissed(sid,lid){const s=S.students.find(x=>x.id===sid),l=s.lessons.find(x=>x.id===lid);l.missed=!l.missed;l.done=false;save();renderAll()}
+// FIX #5 & #9: paid is independent of done — can be paid even if not done, counts in finance
+function togPaid(sid,lid){const s=S.students.find(x=>x.id===sid),l=s.lessons.find(x=>x.id===lid);l.paid=!l.paid;save();renderAll()}
+function togMP(sid,y,m){const s=S.students.find(x=>x.id===sid);if(!s.monthPayments)s.monthPayments={};const k=mkKey(y,m);s.monthPayments[k]=!s.monthPayments[k];save();renderAll()}
+function togPayoutReceived(sid,pid){const s=S.students.find(x=>x.id===sid),p=(s.payouts||[]).find(x=>x.id===pid);if(p)p.received=!p.received;save();renderAll()}
+function th(sid,i){const s=S.students.find(x=>x.id===sid);s.hw[i].d=!s.hw[i].d;save();renderAll()}
+function dh(sid,i){S.students.find(x=>x.id===sid).hw.splice(i,1);save();renderAll()}
+function sn(sid,v){S.students.find(x=>x.id===sid).notes=v;save()}
+function dl(sid,lid){const s=S.students.find(x=>x.id===sid);s.lessons=s.lessons.filter(l=>l.id!==lid);save();renderAll()}
+function mapd(sid,y,m){const s=S.students.find(x=>x.id===sid);if(s.payType==='month'){if(!s.monthPayments)s.monthPayments={};s.monthPayments[mkKey(y,m)]=true;}else{glm(s,y,m).filter(l=>l.done&&!l.paid&&!l.missed).forEach(l=>l.paid=true);}save();renderAll()}
+function delPayout(sid,pid){const s=S.students.find(x=>x.id===sid);s.payouts=(s.payouts||[]).filter(p=>p.id!==pid);save();renderAll()}
+
+// FIX #10: edit note inline
+function editNote(sid,lid){
+  const s=S.students.find(x=>x.id===sid),l=s.lessons.find(x=>x.id===lid);
+  showMod(`<h3>Заметка к уроку</h3>
+    <div class="fg"><label class="fl">${new Date(l.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}</label>
+    <textarea class="ta" id="f-note" style="min-height:80px">${l.note||''}</textarea></div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="saveNote(${sid},${lid})">Сохранить</button></div>`);
+}
+function saveNote(sid,lid){const s=S.students.find(x=>x.id===sid),l=s.lessons.find(x=>x.id===lid);l.note=document.getElementById('f-note').value.trim();save();cM();renderAll()}
+
+function cdc(day){
+  const y=S.date.getFullYear(),m=S.date.getMonth(),dt=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const stus=S.students.filter(s=>s.type==='student');if(!stus.length)return;
+  const opts=stus.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  showMod(`<h3>Добавить урок — ${day} ${MS2[m]}</h3>
+    <div class="fg"><label class="fl">Ученик</label><select class="fi" id="f-sid">${opts}</select></div>
+    <div class="fg"><label class="fl">Заметка</label><input class="fi" id="f-note" placeholder="Тема урока..."></div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="alD('${dt}')">Добавить</button></div>`);
+}
+function alD(dt){const sid=parseInt(document.getElementById('f-sid').value),note=document.getElementById('f-note').value;S.students.find(x=>x.id===sid).lessons.push({id:Date.now(),date:dt,done:false,paid:false,note});save();cM();renderAll()}
+function oAl(sid){const t=new Date().toISOString().split('T')[0];
+  showMod(`<h3>Добавить урок</h3>
+    <div class="fg"><label class="fl">Дата</label><input class="fi" id="f-dt" type="date" value="${t}"></div>
+    <div class="fg"><label class="fl">Заметка</label><input class="fi" id="f-nt" placeholder="Тема урока..."></div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="aL(${sid})">Добавить</button></div>`);
+}
+function aL(sid){const dt=document.getElementById('f-dt').value,nt=document.getElementById('f-nt').value;if(!dt)return;S.students.find(x=>x.id===sid).lessons.push({id:Date.now(),date:dt,done:false,paid:false,note:nt});save();cM();renderAll()}
+function oRep(sid){
+  selDays=new Set();
+  showMod(`<h3>Повторяющийся урок</h3>
+    <p style="font-size:11px;color:var(--tx2);margin-bottom:10px">Выберите дни недели и количество месяцев вперёд</p>
+    <div class="fg"><label class="fl">Дни недели</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">
+        ${DN.map((d,i)=>`<button class="db-btn" id="db-${i}" onclick="tD(${i})">${d}</button>`).join('')}
+      </div>
+    </div>
+    <div class="fg"><label class="fl">На сколько месяцев вперёд</label>
+      <select class="fi" id="f-months">
+        <option value="1">1 месяц</option><option value="2">2 месяца</option>
+        <option value="3" selected>3 месяца</option><option value="6">6 месяцев</option>
+        <option value="12">12 месяцев</option>
+      </select>
+    </div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="aRep(${sid})">Создать расписание</button></div>`);
+}
+function tD(i){if(selDays.has(i))selDays.delete(i);else selDays.add(i);const b=document.getElementById('db-'+i);if(b)b.className='db-btn'+(selDays.has(i)?' sel':'')}
+function aRep(sid){
+  if(!selDays.size){cM();return}
+  const s=S.students.find(x=>x.id===sid),ahead=parseInt(document.getElementById('f-months').value)||3,sy=S.date.getFullYear(),sm=S.date.getMonth();
+  for(let mi=0;mi<ahead;mi++){let mm=sm+mi,yy=sy;while(mm>11){mm-=12;yy++;}
+    const dim=new Date(yy,mm+1,0).getDate();
+    for(let d=1;d<=dim;d++){const dt=new Date(yy,mm,d);let dow=dt.getDay()-1;if(dow<0)dow=6;
+      if(selDays.has(dow)){const ds=`${yy}-${String(mm+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if(!s.lessons.some(l=>l.date===ds))s.lessons.push({id:Date.now()+mi*10000+d,date:ds,done:false,paid:false,note:''});}}}
+  selDays=new Set();save();cM();renderAll();
+}
+function oAh(sid){showMod(`<h3>Домашнее задание</h3><div class="fg"><label class="fl">Задание</label><textarea class="ta" id="f-hw" placeholder="Упражнения, эссе..."></textarea></div><div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="aH(${sid})">Добавить</button></div>`)}
+function aH(sid){const t=(document.getElementById('f-hw').value||'').trim();if(!t)return;S.students.find(x=>x.id===sid).hw.push({t,d:false});save();cM();renderAll()}
+function oAddPayout(sid){const t=new Date().toISOString().split('T')[0];
+  showMod(`<h3>Внести выплату</h3>
+    <div class="fg"><label class="fl">Дата</label><input class="fi" id="f-dt" type="date" value="${t}"></div>
+    <div class="fg"><label class="fl">Сумма (₽)</label><input class="fi" id="f-amt" type="number" placeholder="18500"></div>
+    <div class="fg"><label class="fl">Примечание</label><input class="fi" id="f-note" placeholder="Выплата 1–15 мая"></div>
+    <div class="fg" style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="f-rcv" style="width:16px;height:16px;accent-color:var(--accent)">
+      <label for="f-rcv" class="fl" style="margin:0;cursor:pointer">Уже получено</label>
+    </div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="addPayout(${sid})">Добавить</button></div>`);
+}
+function addPayout(sid){const s=S.students.find(x=>x.id===sid),dt=document.getElementById('f-dt').value,amt=parseFloat(document.getElementById('f-amt').value)||0,note=document.getElementById('f-note').value,received=document.getElementById('f-rcv').checked;if(!dt||amt<=0)return;if(!s.payouts)s.payouts=[];s.payouts.push({id:Date.now(),date:dt,amount:amt,note,received});save();cM();renderAll()}
+
+// ── Backup / Restore (FIX #11) ──
+function openBackup(){
+  showMod(`<h3>Бэкап данных</h3>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:14px">Экспортируй данные в файл и импортируй на другом устройстве.</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-p" onclick="exportData()">⬇ Экспортировать (скачать JSON)</button>
+      <div style="font-size:11px;color:var(--tx2);text-align:center">— или —</div>
+      <label class="fl">Импортировать из файла</label>
+      <input type="file" accept=".json" class="fi" id="f-import" onchange="importData(this)">
+    </div>
+    <div class="fa"><button class="btn" onclick="cM()">Закрыть</button></div>`);
+}
+function exportData(){
+  const data=JSON.stringify({students:S.students,dark:S.dark,exported:new Date().toISOString()},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`teacher-crm-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function importData(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(!d.students)throw new Error('Неверный формат');
+      if(confirm(`Импортировать ${d.students.length} учеников? Текущие данные будут заменены.`)){
+        S.students=d.students;S.dark=d.dark!==undefined?d.dark:S.dark;
+        S.students.forEach(s=>{if(!s.monthPayments)s.monthPayments={};if(s.type==='company'&&!s.payouts)s.payouts=[];});
+        save();cM();applyTheme();renderAll();alert('Импорт успешен!');}
+    }catch(err){alert('Ошибка чтения файла: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+// ── Color picker ──
+function cpHtml(cur){
+  return `<div class="color-picker">${PALETTE.map((p,i)=>`
+    <div class="cp-sw${i===cur?' sel':''}" style="background:${p.bg};${i===cur?'border-color:'+p.bg+';outline:3px solid white;outline-offset:-5px':''}" onclick="pickC(${i})" title="${p.lbl}"></div>
+  `).join('')}</div>`;
+}
+function pickC(i){
+  _pc=i;
+  document.querySelectorAll('.cp-sw').forEach((el,idx)=>{
+    el.classList.toggle('sel',idx===i);
+    if(idx===i){el.style.outline='3px solid white';el.style.outlineOffset='-5px';}
+    else{el.style.outline='none';}
+  });
+}
+
+// ── Add / Edit student ──
+function openAddSt(){
+  _pc=S.students.length%PALETTE.length;
+  showMod(`<h3>Новый ученик</h3>
+    <div class="fg"><label class="fl">Тип</label>
+      <select class="fi" id="f-type" onchange="togType()">
+        <option value="student">Частный ученик</option>
+        <option value="company">Платформа / Компания</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Имя / Название</label><input class="fi" id="f-nm" placeholder="Анна Петрова / SkyEng"></div>
+    <div id="f-sf">
+      <div class="fr2">
+        <div class="fg" style="flex:1"><label class="fl">Уровень</label><select class="fi" id="f-lv">${LV.map(l=>`<option>${l}</option>`).join('')}</select></div>
+        <div class="fg" style="flex:1"><label class="fl">Фокус</label><input class="fi" id="f-fc" placeholder="IELTS, speaking..."></div>
+      </div>
+      <div class="fr2">
+        <div class="fg" style="flex:1"><label class="fl">Телефон</label><input class="fi" id="f-ph"></div>
+        <div class="fg" style="flex:1"><label class="fl">Telegram</label><input class="fi" id="f-tg" placeholder="@username"></div>
+      </div>
+      <div class="fg"><label class="fl">Тип оплаты</label>
+        <select class="fi" id="f-pt">
+          <option value="lesson">Поурочно</option>
+          <option value="month">Помесячно (ставка × кол-во уроков)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Стоимость одного урока (₽)</label><input class="fi" id="f-rt" type="number" value="1500"></div>
+    </div>
+    <div id="f-cf" style="display:none">
+      <div class="fg"><label class="fl">Заметка</label><input class="fi" id="f-cnote" placeholder="Выплаты раз в 2 недели..."></div>
+    </div>
+    <div class="fg"><label class="fl">Цвет</label>${cpHtml(_pc)}</div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="aSt()">Добавить</button></div>`);
+}
+function togType(){const v=document.getElementById('f-type').value;document.getElementById('f-sf').style.display=v==='student'?'':'none';document.getElementById('f-cf').style.display=v==='company'?'':'none'}
+function aSt(){
+  const nm=(document.getElementById('f-nm').value||'').trim();if(!nm)return;
+  const type=document.getElementById('f-type').value,id=Date.now();
+  if(type==='company'){S.students.push({id,name:nm,type:'company',payType:'company',color:_pc,level:'',phone:'',tg:'',focus:'',rate:0,notes:document.getElementById('f-cnote').value,lessons:[],hw:[],payouts:[],monthPayments:{}});}
+  else{const pt=document.getElementById('f-pt').value;S.students.push({id,name:nm,level:document.getElementById('f-lv').value,focus:document.getElementById('f-fc').value||'Общий',phone:document.getElementById('f-ph').value,tg:document.getElementById('f-tg').value,type:'student',payType:pt,color:_pc,rate:parseInt(document.getElementById('f-rt').value||1500),lessons:[],hw:[],notes:'',monthPayments:{}});}
+  save();cM();S.selId=id;S.view='st';renderAll();
+}
+function oEs(sid){
+  const s=S.students.find(x=>x.id===sid);_pc=s.color;
+  if(s.type==='company'){showMod(`<h3>Редактировать: ${s.name}</h3>
+    <div class="fg"><label class="fl">Название</label><input class="fi" id="f-nm" value="${s.name}"></div>
+    <div class="fg"><label class="fl">Заметка</label><input class="fi" id="f-cnote" value="${s.notes||''}"></div>
+    <div class="fg"><label class="fl">Цвет</label>${cpHtml(s.color)}</div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="svSt(${sid})">Сохранить</button></div>`);return;}
+  showMod(`<h3>Редактировать ученика</h3>
+    <div class="fg"><label class="fl">Имя</label><input class="fi" id="f-nm" value="${s.name}"></div>
+    <div class="fr2">
+      <div class="fg" style="flex:1"><label class="fl">Уровень</label><select class="fi" id="f-lv">${LV.map(l=>`<option${l===s.level?' selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fg" style="flex:1"><label class="fl">Фокус</label><input class="fi" id="f-fc" value="${s.focus||''}"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg" style="flex:1"><label class="fl">Телефон</label><input class="fi" id="f-ph" value="${s.phone||''}"></div>
+      <div class="fg" style="flex:1"><label class="fl">Telegram</label><input class="fi" id="f-tg" value="${s.tg||''}"></div>
+    </div>
+    <div class="fg"><label class="fl">Тип оплаты</label>
+      <select class="fi" id="f-pt">
+        <option value="lesson"${s.payType==='lesson'?' selected':''}>Поурочно</option>
+        <option value="month"${s.payType==='month'?' selected':''}>Помесячно (ставка × кол-во уроков)</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Стоимость одного урока (₽)</label><input class="fi" id="f-rt" type="number" value="${s.rate}"></div>
+    <div class="fg"><label class="fl">Цвет</label>${cpHtml(s.color)}</div>
+    <div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-p" onclick="svSt(${sid})">Сохранить</button></div>`);
+}
+function svSt(sid){
+  const s=S.students.find(x=>x.id===sid);s.name=(document.getElementById('f-nm').value||s.name).trim();s.color=_pc;
+  if(s.type==='company'){s.notes=document.getElementById('f-cnote')?.value||s.notes;}
+  else{s.level=document.getElementById('f-lv').value;s.focus=document.getElementById('f-fc').value||s.focus;s.phone=document.getElementById('f-ph').value;s.tg=document.getElementById('f-tg').value;s.payType=document.getElementById('f-pt').value;s.rate=parseInt(document.getElementById('f-rt').value)||s.rate;}
+  save();cM();renderAll();
+}
+function confDel(sid){const s=S.students.find(x=>x.id===sid);showMod(`<h3>Удалить ученика?</h3><p style="font-size:12px;color:var(--tx2);margin-bottom:12px">«${s.name}» и все данные будут удалены навсегда.</p><div class="fa"><button class="btn" onclick="cM()">Отмена</button><button class="btn btn-d" onclick="dSt(${sid})">Удалить</button></div>`)}
+function dSt(sid){S.students=S.students.filter(s=>s.id!==sid);S.selId=null;S.view='ov';save();cM();renderAll()}
+function showMod(h){document.getElementById('MOD').innerHTML=`<div class="mo" onclick="cMO(event)"><div class="md">${h}</div></div>`}
+function cMO(e){if(e.target.classList.contains('mo'))cM()}
+function cM(){document.getElementById('MOD').innerHTML=''}
+load();
+</script>
+</body>
+</html>
