@@ -34,8 +34,9 @@
   --warn-bg:#422006;--warn-tx:#fde68a;--warn-br:#78350f;
   color-scheme:dark;
 }
-html,body{height:100%;overflow:hidden}
+html,body{height:100%;overflow:hidden;background:#09090b}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+.dark body, .dark html{background:#09090b}
 
 /* ── Login ── */
 #loginScreen{position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;display:none!important}
@@ -183,10 +184,19 @@ button{cursor:pointer;font-family:inherit}
     border-top: 0.5px solid var(--br);
     border-bottom: none;
     padding: 0;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom, 16px);
     z-index: 50;
     justify-content: space-around;
     gap: 0;
+  }
+  /* Fill safe area below tabs with same bg */
+  .tabs::after{
+    content:'';
+    position:fixed;
+    bottom:0;left:0;right:0;
+    height:env(safe-area-inset-bottom, 16px);
+    background:var(--bg);
+    z-index:-1;
   }
   .tab{
     flex: 1;
@@ -210,7 +220,7 @@ button{cursor:pointer;font-family:inherit}
 
   /* Bigger touch targets */
   .sb{ padding: 5px 10px; font-size: 11px; }
-  .row{ padding: 8px 0; }
+  .row{ padding: 8px 0; flex-wrap: nowrap; }
 
   /* Month title smaller */
   #MT{ font-size: 12px; min-width: 100px; }
@@ -234,6 +244,31 @@ button{cursor:pointer;font-family:inherit}
 @media(max-width:680px){
   .show-mobile{ display: flex; }
   .show-desktop{ display: none !important; }
+}
+
+@media(max-width:680px){
+  /* Compact lesson status buttons */
+  .row{ gap: 4px; }
+  .row > div:first-child{ min-width: 38px; font-size: 10px; }
+  .ls-sep{ margin: 0 1px; }
+  
+  /* Note chip full width on its own line */
+  .note-chip{ max-width: none; flex: 1; }
+  
+  /* Modals full width */
+  .md{ width: 100%; max-width: 100%; border-radius: 16px 16px 0 0; position: fixed; bottom: 0; left: 0; right: 0; margin: 0; max-height: 80vh; }
+  .mo{ align-items: flex-end; }
+  
+  /* Metric cards 2 columns */
+  .mg{ grid-template-columns: 1fr 1fr; }
+  
+  /* Panel padding tighter */
+  .pn{ padding: 10px; }
+  .pt{ font-size: 12px; margin-bottom: 8px; }
+}
+
+@media(max-width:680px){
+  .logout-desktop{ display: none !important; }
 }
 </style>
 
@@ -290,6 +325,9 @@ button{cursor:pointer;font-family:inherit}
     </div>
     <input class="srch" placeholder="Поиск..." id="srch" oninput="renderSL()">
     <div id="SL" style="overflow-y:auto;flex:1"></div>
+    <div id="sidebarBottom" style="padding:10px 12px;border-top:0.5px solid var(--br);display:none">
+      <button class="btn btn-d" onclick="doLogout()" style="width:100%;font-size:12px">Выйти из аккаунта</button>
+    </div>
   </div>
 
   <div class="main">
@@ -304,7 +342,7 @@ button{cursor:pointer;font-family:inherit}
         <button class="btn" onclick="gt()" style="font-size:11px">Сег.</button>
         <button class="btn-icon" onclick="toggleTheme()" id="themeBtn">☀️</button>
         <span class="si-ind" id="SI" style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">...</span>
-        <button class="btn btn-d" id="logoutBtn" onclick="doLogout()" style="font-size:10px;padding:3px 8px;display:none">Выйти</button>
+        <button class="btn btn-d logout-desktop" id="logoutBtn" onclick="doLogout()" style="font-size:10px;padding:3px 8px;display:none">Выйти</button>
       </div>
     </div>
     <div class="tabs">
@@ -411,8 +449,9 @@ function showApp(){
   ls.classList.remove('visible');
   ls.style.display='none';
   document.getElementById('app').style.display='flex';
-  const lb=document.getElementById('logoutBtn');
-  if(lb)lb.style.display=_offline?'none':'block';
+  const show=_offline?'none':'block';
+  const lb=document.getElementById('logoutBtn');if(lb)lb.style.display=show;
+  const sb=document.getElementById('sidebarBottom');if(sb)sb.style.display=_offline?'none':'block';
 }
 function showErr(m){const e=document.getElementById('loginError');e.textContent=m;e.style.display='block';}
 
@@ -679,12 +718,13 @@ function rCal(){
 
 function lBtns(sid,lid,l,payType){
   const missed=!!l.missed,done=!!l.done;
-  const paidBtn=payType==='lesson'?`<div class="ls-sep"></div><button class="sb${l.paid?' s-paid':''}" onclick="togPaid(${sid},${lid})">${l.paid?'✓ Оплачен':'Не оплачен'}</button>`:'';
-  return `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">
-    <div style="display:flex;gap:2px">
+  const paidBtn=payType==='lesson'?`<button class="sb${l.paid?' s-paid':''}" onclick="togPaid(${sid},${lid})" style="margin-top:3px">${l.paid?'✓ Опл.':'Не опл.'}</button>`:'';
+  return `<div style="display:flex;flex-direction:column;gap:2px">
+    <div style="display:flex;gap:3px">
       <button class="sb${done&&!missed?' s-done':''}" onclick="setDone(${sid},${lid})">${done&&!missed?'✓ Провёл':'Провёл'}</button>
-      <button class="sb${missed?' s-miss':''}" onclick="setMissed(${sid},${lid})">${missed?'✗ Не состоялся':'Не состоялся'}</button>
-    </div>${paidBtn}
+      <button class="sb${missed?' s-miss':''}" onclick="setMissed(${sid},${lid})">${missed?'✗ Отменён':'Отменён'}</button>
+      ${paidBtn}
+    </div>
   </div>`;
 }
 
@@ -790,10 +830,12 @@ function rSt(){
     ${ls.length===0?`<div style="font-size:12px;color:var(--tx2)">Нет уроков в этом месяце</div>`:
     ls.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(l=>{const d=new Date(l.date);
       return `<div class="row">
-        <div style="font-size:11px;color:var(--tx2);min-width:46px">${d.getDate()} ${MS2[d.getMonth()]}</div>
-        <div style="flex:1">${lBtns(s.id,l.id,l,s.payType)}</div>
-        <button class="note-chip" onclick="editNote(${s.id},${l.id})">${l.note||'+ заметка'}</button>
-        <button class="sb" onclick="dl(${s.id},${l.id})" style="color:var(--danger-tx)">✕</button>
+        <div style="display:flex;align-items:flex-start;gap:6px;width:100%">
+          <div style="font-size:11px;color:var(--tx2);min-width:42px;padding-top:4px">${d.getDate()} ${MS2[d.getMonth()]}</div>
+          <div style="flex:1">${lBtns(s.id,l.id,l,s.payType)}</div>
+          <button class="note-chip" onclick="editNote(${s.id},${l.id})" style="max-width:80px;margin-top:2px">${l.note?'📝':'+ заметка'}</button>
+          <button class="sb" onclick="dl(${s.id},${l.id})" style="color:var(--danger-tx);padding:2px 6px;margin-top:2px">✕</button>
+        </div>
       </div>`;}).join('')}
   </div>
   <div class="pn"><div class="pt">Домашние задания
