@@ -157,17 +157,7 @@ button{cursor:pointer;font-family:inherit}
 /* ── Mobile layout ── */
 @media(max-width:680px){
   /* Safe area for Dynamic Island / notch */
-  .topbar{
-    padding-top: max(10px, env(safe-area-inset-top));
-    padding-left: max(10px, env(safe-area-inset-left));
-    padding-right: max(10px, env(safe-area-inset-right));
-  }
-  .app{
-    padding-top: 0;
-  }
-  body{
-    background: #09090b;
-  }
+
 
   /* Topbar on mobile: items shrink naturally */
   .topbar{ flex-wrap: nowrap; gap: 4px; }
@@ -224,24 +214,11 @@ button{cursor:pointer;font-family:inherit}
   /* Month title smaller */
   #MT{ font-size: 12px; min-width: 100px; }
 
-  /* Sidebar header - match topbar safe area */
   .sh{ padding: 12px; }
-  .sidebar .sh{ padding-top: max(12px, env(safe-area-inset-top)); }
 }
 
 /* Fix white bar on iOS - color the area behind status bar */
-@supports(padding-top: env(safe-area-inset-top)){
-  .dark .topbar{
-    background: #18181b;
-  }
-  .topbar{
-    padding-top: max(12px, env(safe-area-inset-top));
-  }
-  /* Sidebar doesn't need safe-area top since it's not behind status bar */
-  .sidebar .sh{
-    padding-top: 12px;
-  }
-}
+
 
 .show-mobile{ display: none; }
 .show-desktop{ display: flex; align-items: center; gap: 6px; }
@@ -280,6 +257,37 @@ button{cursor:pointer;font-family:inherit}
   .sidebar-logout{ display: block !important; }
 }
 
+
+/* ── PWA standalone mode (added to home screen) ── */
+@media (display-mode: standalone) {
+  /* Top: push topbar down under status bar / Dynamic Island */
+  .topbar {
+    padding-top: env(safe-area-inset-top, 0px);
+    min-height: calc(44px + env(safe-area-inset-top, 0px));
+  }
+  /* Sidebar header same height as topbar */
+  .sidebar .sh {
+    padding-top: env(safe-area-inset-top, 0px);
+    min-height: calc(44px + env(safe-area-inset-top, 0px));
+  }
+  /* Bottom: tab bar above home indicator */
+  .tabs {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Content: don't hide behind tab bar */
+  .content {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Fill background under tab bar */
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: env(safe-area-inset-bottom, 0px);
+    background: var(--bg);
+    z-index: 49;
+  }
+}
 </style>
 
 
