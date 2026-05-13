@@ -169,22 +169,9 @@ button{cursor:pointer;font-family:inherit}
     background: #09090b;
   }
 
-  /* Topbar: two rows on mobile */
-  .topbar{
-    flex-wrap: wrap;
-    gap: 6px;
-    padding-bottom: 8px;
-  }
-  .topbar > div:first-child{
-    flex: 1;
-    min-width: 0;
-  }
-  .topbar > div:last-child{
-    flex-shrink: 0;
-  }
-
-  /* Hide "Сегодня" text on mobile, keep arrow */
-  .btn-today-text{ display: none; }
+  /* Topbar on mobile: items shrink naturally */
+  .topbar{ flex-wrap: nowrap; gap: 4px; }
+  #topbar .si-ind{ display: none; }
 
   /* Bottom tab bar instead of top tabs */
   .tabs{
@@ -306,29 +293,18 @@ button{cursor:pointer;font-family:inherit}
   </div>
 
   <div class="main">
-    <div class="topbar">
-      <!-- Row 1: navigation -->
-      <div style="display:flex;align-items:center;gap:6px;width:100%">
-        <button class="mob-btn" id="mobBtn" onclick="openSB()">☰</button>
+    <div class="topbar" id="topbar">
+      <button class="mob-btn" id="mobBtn" onclick="openSB()">☰</button>
+      <div style="display:flex;align-items:center;gap:6px">
         <button class="btn" onclick="pm()">&#8592;</button>
-        <span style="font-size:13px;font-weight:600;color:var(--tx);flex:1;text-align:center" id="MT"></span>
+        <span style="font-size:13px;font-weight:600;color:var(--tx);min-width:100px;text-align:center" id="MT"></span>
         <button class="btn" onclick="nm()">&#8594;</button>
-        <button class="btn" onclick="gt()" style="font-size:11px">
-          <span class="show-desktop">Сегодня</span>
-          <span class="show-mobile">⊙</span>
-        </button>
-        <!-- Desktop: show theme+status here -->
-        <div class="show-desktop" style="display:flex;align-items:center;gap:6px">
-          <button class="btn-icon" onclick="toggleTheme()" id="themeBtn" title="Тема">☀️</button>
-          <span class="si-ind" id="SI">...</span>
-          <button class="btn btn-d" id="logoutBtn" onclick="doLogout()" style="font-size:10px;padding:3px 8px;display:none">Выйти</button>
-        </div>
       </div>
-      <!-- Row 2: status bar (mobile only) -->
-      <div class="show-mobile" style="display:flex;align-items:center;justify-content:flex-end;gap:6px;width:100%">
-        <span class="si-ind" id="SI2">...</span>
-        <button class="btn-icon" onclick="toggleTheme()" id="themeBtn2" title="Тема">☀️</button>
-        <button class="btn btn-d" id="logoutBtn2" onclick="doLogout()" style="font-size:10px;padding:3px 8px;display:none">Выйти</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn" onclick="gt()" style="font-size:11px">Сег.</button>
+        <button class="btn-icon" onclick="toggleTheme()" id="themeBtn">☀️</button>
+        <span class="si-ind" id="SI" style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px">...</span>
+        <button class="btn btn-d" id="logoutBtn" onclick="doLogout()" style="font-size:10px;padding:3px 8px;display:none">Выйти</button>
       </div>
     </div>
     <div class="tabs">
@@ -435,9 +411,8 @@ function showApp(){
   ls.classList.remove('visible');
   ls.style.display='none';
   document.getElementById('app').style.display='flex';
-  const show=_offline?'none':'block';
-  const lb=document.getElementById('logoutBtn');if(lb)lb.style.display=show;
-  const lb2=document.getElementById('logoutBtn2');if(lb2)lb2.style.display=show;
+  const lb=document.getElementById('logoutBtn');
+  if(lb)lb.style.display=_offline?'none':'block';
 }
 function showErr(m){const e=document.getElementById('loginError');e.textContent=m;e.style.display='block';}
 
@@ -537,15 +512,11 @@ function applyTheme(){
   document.getElementById('app').classList.toggle('dark',S.dark);
   const icon=S.dark?'☀️':'🌙';
   document.getElementById('themeBtn').textContent=icon;
-  const tb2=document.getElementById('themeBtn2');if(tb2)tb2.textContent=icon;
 }
 function toggleTheme(){S.dark=!S.dark;applyTheme();save();}
 
 // ── Helpers ──
-function setInd(t){
-  const e=document.getElementById('SI');if(e)e.textContent=t;
-  const e2=document.getElementById('SI2');if(e2)e2.textContent=t;
-}
+function setInd(t){const e=document.getElementById('SI');if(e)e.textContent=t;}
 function gi(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
 function fmt(n){return Math.round(n||0).toLocaleString('ru-RU')+'₽'}
 function mkKey(y,m){return y+'-'+m}
