@@ -49,11 +49,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 /* ── App ── */
 .app{display:flex;height:100dvh;position:relative;background:var(--bg3);color:var(--tx)}
 .sidebar{width:262px;min-width:262px;background:var(--bg);border-right:0.5px solid var(--br);display:flex;flex-direction:column;overflow:hidden}
-@media(max-width:680px){
-  .sidebar{position:fixed;left:-262px;top:0;bottom:0;z-index:200;transition:left .25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
-  .sidebar.open{left:0}
-  .mob-btn{display:flex!important}
-}
 .mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
 .mob-btn{display:none;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;border:0.5px solid var(--br2);background:transparent;color:var(--tx);font-size:17px;cursor:pointer}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
@@ -155,116 +150,14 @@ button{cursor:pointer;font-family:inherit}
 }
 
 /* ── Mobile layout ── */
-@media(max-width:680px){
-  /* Safe area for Dynamic Island / notch */
-
-
-  /* Topbar on mobile: items shrink naturally */
-  .topbar{ flex-wrap: nowrap; gap: 4px; }
-  #topbar .si-ind{ display: none; }
-
-  /* Bottom tab bar instead of top tabs */
-  .tabs{
-    order: 999;
-    position: fixed;
-    bottom: 0;
-    left: 0; right: 0;
-    background: var(--bg);
-    border-top: 0.5px solid var(--br);
-    border-bottom: none;
-    padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 16px);
-    z-index: 50;
-    justify-content: space-around;
-    gap: 0;
-  }
-  /* Fill entire safe area below tabs */
-  .tabs::after{
-    content:'';
-    position:fixed;
-    bottom:0;left:0;right:0;
-    height:100px;
-    background:var(--bg);
-    z-index:-1;
-  }
-  .tab{
-    flex: 1;
-    text-align: center;
-    padding: 10px 4px 6px;
-    font-size: 11px;
-    border-bottom: none;
-    border-top: 2px solid transparent;
-    margin-bottom: 0;
-  }
-  .tab.active{
-    border-top-color: var(--accent);
-    border-bottom: none;
-    color: var(--accent);
-  }
-
-  /* Content padding for bottom tab bar */
-  .content{
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
-  }
-
-  /* Bigger touch targets */
-  .sb{ padding: 5px 10px; font-size: 11px; }
-  .row{ padding: 8px 0; flex-wrap: nowrap; }
-
-  /* Month title smaller */
-  #MT{ font-size: 12px; min-width: 100px; }
-
-  .sh{ padding: 12px; }
-}
 
 /* Fix white bar on iOS - color the area behind status bar */
 
-
 .show-mobile{ display: none; }
 .show-desktop{ display: flex; align-items: center; gap: 6px; }
-@media(max-width:680px){
-  .show-mobile{ display: flex; }
-  .show-desktop{ display: none !important; }
-}
-
-@media(max-width:680px){
-  /* Compact lesson status buttons */
-  .row{ gap: 4px; }
-  .row > div:first-child{ min-width: 38px; font-size: 10px; }
-  .ls-sep{ margin: 0 1px; }
-  
-  /* Note chip full width on its own line */
-  .note-chip{ max-width: none; flex: 1; }
-  
-  /* Modals full width */
-  .md{ width: 100%; max-width: 100%; border-radius: 16px 16px 0 0; position: fixed; bottom: 0; left: 0; right: 0; margin: 0; max-height: 80vh; }
-  .mo{ align-items: flex-end; }
-  
-  /* Metric cards 2 columns */
-  .mg{ grid-template-columns: 1fr 1fr; }
-  
-  /* Panel padding tighter */
-  .pn{ padding: 10px; }
-  .pt{ font-size: 12px; margin-bottom: 8px; }
-}
-
-@media(max-width:680px){
-  .logout-desktop{ display: none !important; }
-}
 
 .sidebar-logout{ display: none !important; }
-@media(max-width:680px){
-  .sidebar-logout{ display: block !important; }
-}
 
-
-/* ── PWA standalone mode (added to home screen) ── */
-@media (display-mode: standalone) {
-  /* Top: push topbar down under status bar / Dynamic Island */
-  .topbar {
-    padding-top: env(safe-area-inset-top, 0px);
-    min-height: calc(44px + env(safe-area-inset-top, 0px));
-  }
   /* Sidebar header same height as topbar */
   .sidebar .sh {
     padding-top: env(safe-area-inset-top, 0px);
@@ -288,6 +181,48 @@ button{cursor:pointer;font-family:inherit}
     z-index: 49;
   }
 }
+
+/* PWA safe area — minimal and clean */
+
+/* Body bg always matches theme — no black bar */
+.app { background: var(--bg3); }
+.dark .tabs { background: #18181b; }
+
+/* ── Mobile sidebar ── */
+@media(max-width:680px){
+  .sidebar{position:fixed;left:-262px;top:0;bottom:0;z-index:200;transition:left .25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
+  .sidebar.open{left:0}
+  .mob-btn{display:flex!important}
+  .show-mobile{display:flex}
+  .show-desktop{display:none!important}
+  .logout-desktop{display:none!important}
+  .sidebar-logout{display:block!important}
+  .topbar{flex-wrap:nowrap;gap:4px}
+  #topbar .si-ind{display:none}
+  .tab{flex:1;text-align:center;padding:10px 4px 6px;font-size:11px;border-bottom:none;border-top:2px solid transparent;margin-bottom:0}
+  .tab.active{border-top-color:var(--accent);border-bottom:none;color:var(--accent)}
+  .tabs{order:999;position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:0.5px solid var(--br);border-bottom:none;padding:0 0 8px;z-index:50;justify-content:space-around;gap:0}
+  .content{padding-bottom:70px}
+  .mg{grid-template-columns:1fr 1fr}
+  .pn{padding:10px}
+  .md{width:100%;max-width:100%;border-radius:16px 16px 0 0;position:fixed;bottom:0;left:0;right:0;margin:0;max-height:80vh}
+  .mo{align-items:flex-end}
+  .row{flex-wrap:nowrap}
+}
+
+/* ── PWA safe area (home screen only) ── */
+@media(display-mode:standalone){
+  .topbar{padding-top:env(safe-area-inset-top)}
+  .sidebar .sh{padding-top:env(safe-area-inset-top)}
+  .tabs{padding-bottom:env(safe-area-inset-bottom)}
+  .content{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
+}
+
+/* ── Show/hide helpers ── */
+.show-mobile{display:none}
+.show-desktop{display:flex;align-items:center;gap:6px}
+.logout-desktop{display:flex}
+.sidebar-logout{display:none}
 </style>
 
 
