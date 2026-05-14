@@ -6,7 +6,7 @@
 
   <!-- PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Teacher CRM">
   <meta name="theme-color" content="#09090b">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2318181b'/><text y='.9em' font-size='72' x='50%' text-anchor='middle'>📚</text></svg>">
@@ -34,8 +34,8 @@
   --warn-bg:#422006;--warn-tx:#fde68a;--warn-br:#78350f;
   color-scheme:dark;
 }
-html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+html,body{height:100%;overflow:hidden;background:#09090b}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#09090b}
 
 /* ── Login ── */
 #loginScreen{position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;display:none!important}
@@ -47,7 +47,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .login-box:not(.dark){background:#fff;border:0.5px solid #e5e3dc}
 
 /* ── App ── */
-.app{display:flex;height:100dvh;position:relative;background:var(--bg3);color:var(--tx)}
+.app{display:flex;height:100dvh;min-height:-webkit-fill-available;position:relative;background:var(--bg3);color:var(--tx)}
 .sidebar{width:262px;min-width:262px;background:var(--bg);border-right:0.5px solid var(--br);display:flex;flex-direction:column;overflow:hidden}
 .mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
 .mob-btn{display:none;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;border:0.5px solid var(--br2);background:transparent;color:var(--tx);font-size:17px;cursor:pointer}
@@ -210,12 +210,16 @@ button{cursor:pointer;font-family:inherit}
   .row{flex-wrap:nowrap}
 }
 
-/* ── PWA safe area (home screen only) ── */
-@media(display-mode:standalone){
-  .topbar{padding-top:env(safe-area-inset-top)}
-  .sidebar .sh{padding-top:env(safe-area-inset-top)}
-  .tabs{padding-bottom:env(safe-area-inset-bottom)}
-  .content{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
+/* ── Safe area — always applied (Safari + PWA) ── */
+.topbar{
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.sidebar .sh{
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@media(max-width:680px){
+  .tabs{padding-bottom: env(safe-area-inset-bottom, 8px)}
+  .content{padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px))}
 }
 
 /* ── Show/hide helpers ── */
@@ -504,6 +508,10 @@ function applyTheme(){
   document.getElementById('app').classList.toggle('dark',S.dark);
   const icon=S.dark?'☀️':'🌙';
   document.getElementById('themeBtn').textContent=icon;
+  // Keep html/body bg in sync to avoid white flash on iOS rubber-band
+  const bg=S.dark?'#09090b':'#eeece7';
+  document.documentElement.style.background=bg;
+  document.body.style.background=bg;
 }
 function toggleTheme(){S.dark=!S.dark;applyTheme();save();}
 
